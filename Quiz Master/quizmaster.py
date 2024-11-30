@@ -1,129 +1,149 @@
 import pgzrun
 
-HEIGHT = 700
-WIDTH = 900
-TITLE = "Quiz Master By Sarang"
+TITLE = "Quiz Master"
+WIDTH = 870
+HEIGHT = 650
 
-# Define rectangles for UI elements
-marquee = Rect(0, 0, 910, 80)
-questionbox = Rect(0, 0, 650, 150)
-timerbox = Rect(0, 0, 150, 150)
-skipbox = Rect(0, 0, 150, 300)
-option1 = Rect(0, 0, 300, 150)
-option2 = Rect(0, 0, 300, 150)
-option3 = Rect(0, 0, 300, 150)
-option4 = Rect(0, 0, 300, 150)
+marquee_box = Rect(0,0,880,80)
+question_box = Rect(0,0,650,150)
+timer_box = Rect(0,0,150,150)
+answer_box1 = Rect(0,0,300,150)
+answer_box2 = Rect(0,0,300,150)
+answer_box3 = Rect(0,0,300,150)
+answer_box4 = Rect(0,0,300,150)
+skip_box = Rect(0,0,150,330)
+
 score = 0
-timeleft = 10
-isgameover = False
+time_left = 10
+question_file_name = "Quiz Master\questions.txt"
+marquee_message = ""
+is_game_over = False
 
-questionfile = "Quiz Master/questions.txt"
-marqueemessage = ""
-optionboxes = [option1, option2, option3, option4]
+answer_boxes = [answer_box1,answer_box2,answer_box3,answer_box4]
 questions = []
-questioncount = 0
-questionindex = -1 # Start at -1 so we can increment before accessing
+question_count = 0
+question_index = 0
 
-# Set Position For Boxes
-marquee.move_ip(0, 0)
-questionbox.move_ip(20, 100)
-timerbox.move_ip(700, 100)
-option1.move_ip(20, 270)   
-option2.move_ip(370, 270)   
-option3.move_ip(20, 450)   
-option4.move_ip(370, 450)   
-skipbox.move_ip(700, 270)
+marquee_box.move_ip(0,0)
+question_box.move_ip(20,100)
+timer_box.move_ip(700,100)
+answer_box1.move_ip(20,270)
+answer_box2.move_ip(370,270)
+answer_box3.move_ip(20,450)
+answer_box4.move_ip(370,450)
+skip_box.move_ip(700,270)
 
 def draw():
-    global marqueemessage
+    global marquee_message
     screen.clear()
     screen.fill(color="black")
-    screen.draw.filled_rect(marquee, "black")
-    screen.draw.filled_rect(questionbox, "blue")
-    screen.draw.filled_rect(timerbox, "orange")
-    screen.draw.filled_rect(skipbox, "green")
-    for i in optionboxes:
-        screen.draw.filled_rect(i, "yellow")
+    screen.draw.filled_rect(marquee_box, "black")
+    screen.draw.filled_rect(question_box, "navy blue")
+    screen.draw.filled_rect(timer_box, "navy blue")
+    screen.draw.filled_rect(skip_box, "dark green")
+
+    for answer_box in answer_boxes:
+        screen.draw.filled_rect(answer_box, "dark orange")
     
-    marqueemessage = "Welcome To Quiz Master by Sarang...."
-    marqueemessage += f"Q: {questionindex + 1} of {questioncount}" 
-    screen.draw.textbox(marqueemessage, marquee, color="pink")
-    screen.draw.textbox("skip", skipbox, color="red", angle=-90)
+    marquee_message = "Welcome To Quiz Master..."
+    marquee_message = marquee_message + f"Q: {question_index} of {question_count}"
 
-    if questions and questionindex >= 0: # Ensure there are questions and valid index
-        screen.draw.textbox(questions[questionindex][0].strip(), questionbox, color="green") 
-        for idx in range(4): # Loop through options safely
-            if idx < len(optionboxes):
-                screen.draw.textbox(questions[questionindex][idx + 1].strip(), optionboxes[idx], color="brown")
-
-def movemarquee():
-    marquee.x -= 2
-    if marquee.right < 0:
-        marquee.left = WIDTH
+    screen.draw.textbox(marquee_message, marquee_box, color="white")
+    screen.draw.textbox(
+        str(time_left),timer_box,
+        color="white", shadow=(0.5, 0.5),
+        scolor="dim grey"
+    )
+    screen.draw.textbox(
+        "Skip", skip_box,
+        color="black", angle=-90
+    )
+    screen.draw.textbox(
+        question[0].strip(), question_box,
+        color="white", shadow=(0.5,0.5),
+        scolor="dim grey"
+    )
+    screen.draw.textbox(
+        "Skip", skip_box,
+        color="black", angle=-90
+    )
+    screen.draw.textbox(
+        question[0].strip(), question_box,
+        color="white", shadow=(0.5,0.5),
+        scolor="dim grey"
+    )
+    index = 1
+    for answer_box in answer_boxes:
+        screen.draw.textbox(question[index].strip(), answer_box, color="black")
+        index = index + 1
 
 def update():
-    movemarquee()
+    move_marquee()
 
-def readnextquestion():
-    global questionindex
-    questionindex += 1
-    return questions.pop(0)
+def move_marquee():
+    marquee_box.x = marquee_box.x - 2
+    if marquee_box.right < 0:
+        marquee_box.left = WIDTH
+
+def read_question_file():
+    global question_count, questions
+    q_file=open(question_file_name, "r")
+    for question in q_file:
+        questions.append(question)
+        question_count = question_count + 1
+    q_file.close()
+
+def read_next_question():
+    global question_index
+    question_index = question_index + 1
+    return questions.pop(0).split(",")
 
 def on_mouse_down(pos):
-    global questionindex
-    if questionindex < len(questions): # Ensure we do not exceed the list length
-        correct_answer_index = int(questions[questionindex][5]) # Get correct answer index
-        
-        for index in range(len(optionboxes)):
-            if optionboxes[index].collidepoint(pos):
-                if index + 1 == correct_answer_index: # Compare with correct answer index (adjusted for options)
-                    correctanswer()
-                else:
-                    gameover()
-        
-        if skipbox.collidepoint(pos):
-            skipquestion()
+    index = 1
+    for box in answer_boxes:
+        if box.collidepoint(pos):
+            if index is int(question[5]):
+                correct_answer()
+            else:
+                game_over()
+        index = index + 1
+    
+    if skip_box.collidepoint(pos):
+        skip_question()
 
-def correctanswer():Saragn
-    global score
-    score += 1
-    if questionindex < questioncount - 1: # Check if there are more questions left
-        readnextquestion()
-        timeleft = 10 
+def correct_answer():
+    global score, question, time_left, questions
+    score = score + 1
+    if questions:
+        question = read_next_question()
+        time_left = 10
     else:
-        gameover()
+        game_over()
 
-def gameover():
-    global timeleft, isgameover
-    message = f"Game Over. You Got {score} Questions Correct." 
-    question[:] = [message] + ["----"] + [5] 
-    timeleft = 0 
-    isgameover = True
+def game_over():
+    global question, time_left, is_game_over
+    message = f"Game over!\nYou got {score} questions correct!"
+    question = [message, "-","-","-","-",5]
+    time_left = 0
+    is_game_over = True
 
-def skipquestion():
-    global timeleft
-    if questionindex < questioncount - 1 and not isgameover:
-        readnextquestion()
-        timeleft = 10 
+def skip_question():
+    global question, time_left
+    if questions and not is_game_over:
+        question = read_next_question()
+        time_left = 10
     else:
-        gameover()
+        game_over()
 
 def update_time_left():
-    global timeleft
-    if timeleft > 0: 
-        timeleft -= 1 
+    global time_left
+    if time_left:
+        time_left = time_left - 1
     else:
-        gameover()
+        game_over()
 
-def readquestionfile():
-    global questioncount
-    with open(questionfile, "r") as q_file: 
-        for i in q_file:
-            questions.append(i.strip().split(",")) 
-            questioncount += 1
-
-readquestionfile()
-if questions: # Ensure there are questions before reading the first one.
-    readnextquestion()
+read_question_file()
+question = read_next_question()
 clock.schedule_interval(update_time_left, 1)
+
 pgzrun.go()
